@@ -18,11 +18,11 @@ Before writing, please consider the following points:
 5、Do not add any information that is not present in the original material. Only organize what is already there.
 The output should be written in Chinese.
 """
+models = ["gpt-4o", "deepseek-v3", "qwen3", "glm-4-plus", "mistral", "claude"]
 
 input_path = "./input"  # 可以替换为你的文件夹路径
 output_path = "./output"  # 可以替换为你的文件夹路径
-# models = ["gpt-4o", "deepseek-v3", "qwen3", "glm-4-plus", "mistral", "claude"]
-models = ["gpt-4o"]
+target_models = ["gpt-4o"]  # 需要使用的模型
 
 
 def generate(model_name, content):
@@ -41,6 +41,13 @@ def generate(model_name, content):
         return chat_to_claude(prompt, content)
 
 
+def find_model(model_name):
+    try:
+        return models.index(model_name)
+    except ValueError:
+        return 0
+
+
 if __name__ == '__main__':
     # 遍历文件夹
     for root, dirs, files in os.walk(input_path):
@@ -51,17 +58,18 @@ if __name__ == '__main__':
                 full_path = os.path.join(root, file)
                 json_data = jsonUtil.read_json_file(full_path)
 
-                for i in range(len(models)):
+                # 处理数据
+                for model in target_models:
                     processed_data = []
                     for datum in json_data:
                         file_id = datum["file_id"]
                         original_context = datum["context"]
-                        generated_text = generate(models[i], original_context)
+                        generated_text = generate(model, original_context)
 
                         json_object = {"file_id": file_id, "original_context": original_context,
                                        "generated_text": generated_text}
                         processed_data.append(json_object)
 
                     name, ext = os.path.splitext(file)
-                    jsonUtil.write_json_file(f"{output_path}/{name}_{i}{ext}", processed_data)
-                    print(models[i] + " done")
+                    jsonUtil.write_json_file(f"{output_path}/{name}_{find_model(model)}{ext}", processed_data)
+                    print(model + " done")
