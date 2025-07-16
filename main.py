@@ -5,7 +5,6 @@ from utils.models.claude import chat_to_claude
 from utils.models.deepseek_v3 import chat_to_deepseek_v3
 from utils.models.glm_4_plus import chat_to_glm4_plus
 from utils.models.gpt_4o import chat_to_gpt4o
-from utils.models.mistral_large import chat_to_mistral_large
 from utils.models.qwen3 import chat_to_qwen3
 
 prompt = """
@@ -18,7 +17,7 @@ Before writing, please consider the following points:
 5、Do not add any information that is not present in the original material. Only organize what is already there.
 The output should be written in Chinese.
 """
-models = ["gpt-4o", "deepseek-v3", "qwen3", "glm-4-plus", "mistral", "claude"]
+models = ["gpt-4o", "deepseek-v3", "qwen3", "glm-4-plus", "claude"]  # 目前可以使用的模型
 
 input_path = "./input"  # 可以替换为你的文件夹路径
 output_path = "./output"  # 可以替换为你的文件夹路径
@@ -34,11 +33,10 @@ def generate(model_name, content):
         return chat_to_qwen3(prompt, content)
     elif model_name == "glm-4-plus":
         return chat_to_glm4_plus(prompt, content)
-    elif model_name == "mistral":
-        return  # mistral 容量不足，不知道如何充值
-        # return chat_to_mistral_large(prompt, content)
     elif model_name == "claude":
         return chat_to_claude(prompt, content)
+    else:
+        return "null"
 
 
 def find_model(model_name):
