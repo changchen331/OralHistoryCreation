@@ -1,5 +1,7 @@
 import os
 
+from prompts import prompt_2, prompt_1
+from settings import setting_1, settings_1
 from utils import jsonUtil
 from utils.models.claude import chat_to_claude
 from utils.models.deepseek_v3 import chat_to_deepseek_v3
@@ -7,34 +9,27 @@ from utils.models.glm_4_plus import chat_to_glm4_plus
 from utils.models.gpt_4o import chat_to_gpt4o
 from utils.models.qwen3 import chat_to_qwen3
 
-prompt = """
-Please organize the following oral narrative into a well-structured and fluently written oral history text. Maintain the original speaker's tone and emotions, and do not fabricate or invent any details. Use a first-person perspective, and preserve authentic life details.
-Before writing, please consider the following points:
-1、Clarify the speaker's basic identity and life background (e.g., age, occupation, family situation)
-2、Organize the narrative along a clear timeline (e.g., structured as “early life, middle years, later years”)
-3、Preserve the speaker’s emotions and colloquial style (e.g., hesitations, sighs, exclamations), and avoid overformalizing the language
-4、Structure the text into clear paragraphs, each focusing on one theme—avoid overly long or undivided blocks of text
-5、Do not add any information that is not present in the original material. Only organize what is already there.
-The output should be written in Chinese.
-"""
-MODELS = ["gpt-4o", "deepseek-v3", "qwen3", "glm-4-plus", "claude"]  # 目前可以使用的模型
 INPUT_PATH = "./input"  # 可以替换为你的文件夹路径
 OUTPUT_PATH = "./output"  # 可以替换为你的文件夹路径
 
-target_models = ["gpt-4o"]  # 需要使用的模型
+PROMPT = prompt_2  # 要使用的 prompt
+SETTING = settings_1[setting_1]["name"]
+
+MODELS = ["gpt-4o", "deepseek-v3", "qwen3", "glm-4-plus", "claude"]  # 目前可以使用的模型
+target_models = ["deepseek-v3", "qwen3", "glm-4-plus"]  # 需要使用的模型
 
 
 def generate(model_name, content):
     if model_name == "gpt-4o":
-        return chat_to_gpt4o(prompt, content)
+        return chat_to_gpt4o(PROMPT, content)
     elif model_name == "deepseek-v3":
-        return chat_to_deepseek_v3(prompt, content)
+        return chat_to_deepseek_v3(PROMPT, content)
     elif model_name == "qwen3":
-        return chat_to_qwen3(prompt, content)
+        return chat_to_qwen3(PROMPT, content)
     elif model_name == "glm-4-plus":
-        return chat_to_glm4_plus(prompt, content)
+        return chat_to_glm4_plus(PROMPT, content)
     elif model_name == "claude":
-        return chat_to_claude(prompt, content)
+        return chat_to_claude(PROMPT, content)
     else:
         return "null"
 
@@ -43,7 +38,7 @@ def find_model(model_name):
     try:
         return MODELS.index(model_name)
     except ValueError:
-        return 0
+        return -1
 
 
 if __name__ == '__main__':
@@ -52,22 +47,18 @@ if __name__ == '__main__':
         for file in files:
             # 检查文件扩展名（不区分大小写）
             if file.lower().endswith('.json'):
-                # 读取文件
-                full_path = os.path.join(root, file)
-                json_data = jsonUtil.read_json_file(full_path)
+                json_data = jsonUtil.read_json_file(os.path.join(root, file))  # 读取文件
+                name, ext = os.path.splitext(file)
 
                 # 处理数据
                 for model in target_models:
                     processed_data = []
                     for datum in json_data:
-                        file_id = datum["file_id"]
-                        original_context = datum["context"]
-                        generated_text = generate(model, original_context)
-
-                        json_object = {"file_id": file_id, "original_context": original_context,
-                                       "generated_text": generated_text}
+                        o_c = datum["context"]
+                        g_t = generate(model, o_c)
+                        json_object = {"file_id": datum["file_id"], "original_context": o_c, "generated_text": g_t}
                         processed_data.append(json_object)
 
-                    name, ext = os.path.splitext(file)
-                    jsonUtil.write_json_file(f"{OUTPUT_PATH}/{name}_{find_model(model)}{ext}", processed_data)
+                    # jsonUtil.write_json_file(f"{OUTPUT_PATH}/{name}_{find_model(model)}{ext}", processed_data)
+                    jsonUtil.write_json_file(f"{OUTPUT_PATH}/{name}_{model}_{SETTING}{ext}", processed_data)
                     print(model + " done")
